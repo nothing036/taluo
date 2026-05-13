@@ -149,8 +149,8 @@
   </div>
 
   <script>
-    const adminToken = localStorage.getItem('admin_token');
-    if (!adminToken) { window.location.href = '/admin-login'; return; }
+    var adminToken = localStorage.getItem('admin_token');
+    if (!adminToken) { window.location.href = '/admin-login'; }
 
     async function adminApi(url, opts = {}) {
       const headers = { ...opts.headers, 'Authorization': 'Bearer ' + adminToken };
@@ -163,8 +163,8 @@
       return res;
     }
 
-    let allUsers = [], allReadings = [];
     let confirmCallback = null;
+    let allUsers = [], allReadings = [];
 
     async function load() {
       const [uRes, rRes] = await Promise.all([
