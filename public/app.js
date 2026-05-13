@@ -110,7 +110,7 @@ async function handleAuth() {
   const body = { username, password };
   if (authMode === 'register') {
     const gender = document.querySelector('input[name="gender"]:checked')?.value || '男';
-    const phone = document.getElementById('auth-phone').value.trim();
+    const birthDate = document.getElementById('auth-birth')?.value;
     if (!birthDate) {
       showAuthError('请选择出生日期');
       submitBtn.disabled = false;
