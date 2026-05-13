@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔮 塔罗牌占卜</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="stars"></div>
+
+  <!-- 顶栏 -->
+  <div class="top-bar">
+    <span class="top-logo">🔮 塔罗占卜</span>
+    <div id="auth-area">
+      <button class="auth-btn" onclick="showAuthModal('login')">登录</button>
+      <button class="auth-btn primary" onclick="showAuthModal('register')">注册</button>
+    </div>
+    <div id="user-area" class="hidden">
+      <span id="user-greeting"></span>
+      <button class="auth-btn" onclick="logout()">退出</button>
+    </div>
+  </div>
+
+  <!-- 登录/注册弹窗 -->
+  <div id="auth-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeAuthModal()"></div>
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeAuthModal()">✕</button>
+      <h2 id="auth-title">🔐 登录</h2>
+
+      <form id="auth-form" onsubmit="return false">
+        <div class="input-group">
+          <span class="input-icon">👤</span>
+          <input type="text" id="auth-username" placeholder="用户名" required minlength="2" maxlength="20">
+        </div>
+        <div class="input-group">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="auth-password" placeholder="密码" required minlength="4">
+        </div>
+
+        <div id="register-fields" class="hidden">
+          <div class="input-group">
+            <span class="input-icon">📱</span>
+            <input type="tel" id="auth-phone" placeholder="手机号" required pattern="1[3-9][0-9]{9}" maxlength="11">
+          </div>
+
+          <div class="gender-group">
+            <span class="input-icon">⚧</span>
+            <div class="gender-options">
+              <label class="gender-opt"><input type="radio" name="gender" value="男" checked> 男</label>
+              <label class="gender-opt"><input type="radio" name="gender" value="女"> 女</label>
+              <label class="gender-opt"><input type="radio" name="gender" value="其他"> 其他</label>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <span class="input-icon">🎂</span>
+            <input type="date" id="auth-birth" required>
+          </div>
+        </div>
+
+        <div id="auth-error" class="auth-error hidden"></div>
+        <button type="button" class="auth-submit" id="auth-submit-btn" onclick="handleAuth()">登录</button>
+      </form>
+
+      <p class="auth-switch" id="auth-switch">
+        还没有账号？<a href="#" onclick="switchAuthMode('register')">立即注册</a>
+      </p>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- 首页 -->
+    <div id="home" class="page active">
+      <h1 class="title">🔮 塔罗牌占卜</h1>
+      <p class="subtitle">聆听你内心的声音</p>
+
+      <div class="spread-options">
+        <button class="spread-btn" onclick="selectSpread('single')">
+          <span class="spread-icon">🃏</span>
+          <span class="spread-name">单张抽牌</span>
+          <span class="spread-desc">每日一牌 · 获得今日启示</span>
+        </button>
+
+        <button class="spread-btn" onclick="selectSpread('three')">
+          <span class="spread-icon">🎴</span>
+          <span class="spread-name">三张牌阵</span>
+          <span class="spread-desc">过去 · 现在 · 未来</span>
+        </button>
+
+        <button class="spread-btn" onclick="selectSpread('celtic')">
+          <span class="spread-icon">🌟</span>
+          <span class="spread-name">凯尔特十字</span>
+          <span class="spread-desc">十张牌阵 · 深度解读</span>
+        </button>
+      </div>
+
+      <div id="history-entry" class="hidden" style="text-align:center;margin-top:30px;">
+        <button class="history-link" onclick="showHistory()">📋 我的占卜记录</button>
+      </div>
+    </div>
+
+    <!-- 抽牌页 -->
+    <div id="draw" class="page">
+      <h2 id="draw-title"></h2>
+      <p id="draw-instruction"></p>
+
+      <div id="cards-area"></div>
+
+      <div class="draw-actions">
+        <button id="shuffle-btn" onclick="startDraw()">✨ 洗牌</button>
+        <button id="reveal-btn" class="hidden" onclick="revealCards()">👁️ 揭示命运</button>
+      </div>
+
+      <button class="back-btn" onclick="goHome()">← 返回首页</button>
+    </div>
+
+    <!-- 结果页 -->
+    <div id="result" class="page">
+      <h2>📜 解读</h2>
+      <div id="result-content"></div>
+      <div class="result-actions">
+        <button onclick="redraw()">🔀 再抽一次</button>
+        <button onclick="goHome()">🏠 返回首页</button>
+      </div>
+    </div>
+
+    <!-- 历史记录页 -->
+    <div id="history" class="page">
+      <h2 class="history-title">📋 我的占卜记录</h2>
+      <div id="history-content"></div>
+      <button class="back-btn" onclick="goHome()">← 返回首页</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

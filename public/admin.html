@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔮 塔罗后台管理</title>
+  <style>
+    :root {
+      --bg: #0f0f1e; --card: #1a1a35; --gold: #c9a84c;
+      --text: #e0d8c8; --dim: #8a80a0; --accent: #7b5ea7;
+      --danger: #d94a5d; --success: #4ac9a0;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+      min-height:100vh;
+    }
+    .top-bar {
+      background: rgba(21,21,48,0.95); padding: 14px 28px;
+      display:flex; align-items:center; justify-content:space-between;
+      border-bottom:1px solid rgba(201,168,76,0.15);
+    }
+    .top-bar h1 { color: var(--gold); font-size:1.3em; }
+    .top-bar a { color: var(--dim); text-decoration:none; font-size:0.9em; }
+    .top-bar a:hover { color: var(--gold); }
+    .tabs { display:flex; gap:0; border-bottom:1px solid rgba(201,168,76,0.1); }
+    .tab {
+      padding: 14px 28px; cursor:pointer; color: var(--dim);
+      border-bottom:2px solid transparent; transition:all 0.3s;
+      font-size:0.95em;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .content { max-width:1200px; margin:0 auto; padding:24px; }
+    .panel { display:none; }
+    .panel.active { display:block; }
+
+    /* Stats */
+    .stats { display:flex; gap:16px; margin-bottom:24px; flex-wrap:wrap; }
+    .stat-card {
+      background: var(--card); border:1px solid rgba(201,168,76,0.1);
+      border-radius:12px; padding:20px 24px; flex:1; min-width:150px;
+    }
+    .stat-card .num { font-size:2em; color: var(--gold); font-weight:bold; }
+    .stat-card .label { color: var(--dim); font-size:0.85em; margin-top:4px; }
+
+    /* Table */
+    table { width:100%; border-collapse:collapse; }
+    th, td {
+      padding:12px 16px; text-align:left;
+      border-bottom:1px solid rgba(255,255,255,0.05);
+      font-size:0.9em;
+    }
+    th { color: var(--gold); font-weight:600; background:rgba(201,168,76,0.05); }
+    tr:hover { background:rgba(255,255,255,0.02); }
+    .badge {
+      display:inline-block; padding:2px 10px; border-radius:10px;
+      font-size:0.8em; font-weight:bold;
+    }
+    .badge-male { background:rgba(74,144,226,0.2); color:#6ab0f3; }
+    .badge-female { background:rgba(226,74,144,0.2); color:#f36ab0; }
+    .badge-other { background:rgba(123,94,167,0.2); color:#a78bd4; }
+    .badge-up { background:rgba(74,201,160,0.15); color:var(--success); }
+    .badge-down { background:rgba(74,112,144,0.15); color:#8ab8d8; }
+    .empty { text-align:center; color:var(--dim); padding:40px; }
+
+    /* Search */
+    .controls { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; align-items:center; }
+    .controls input, .controls select {
+      padding:8px 14px; background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.1); border-radius:8px;
+      color:var(--text); font-size:0.9em; outline:none;
+    }
+    .controls input:focus, .controls select:focus { border-color:var(--gold); }
+    .btn {
+      padding:8px 18px; border-radius:8px; cursor:pointer;
+      font-size:0.85em; font-family:inherit; border:none; transition:all 0.3s;
+    }
+    .btn-danger { background:rgba(217,74,93,0.2); color:var(--danger); }
+    .btn-danger:hover { background:rgba(217,74,93,0.35); }
+    .btn-secondary { background:rgba(255,255,255,0.05); color:var(--dim); border:1px solid rgba(255,255,255,0.1); }
+    .btn-secondary:hover { color:var(--text); border-color:rgba(255,255,255,0.2); }
+    .modal-overlay {
+      position:fixed; top:0;left:0;width:100%;height:100%;
+      background:rgba(0,0,0,0.6); display:flex;align-items:center;justify-content:center; z-index:100;
+    }
+    .modal-box {
+      background:var(--card); border:1px solid rgba(201,168,76,0.2);
+      border-radius:16px; padding:28px; text-align:center;
+    }
+    .modal-box p { margin-bottom:20px; }
+    .modal-box .btn { margin:0 8px; }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <h1>🔮 塔罗牌 · 后台管理</h1>
+    <a href="/">← 返回前台</a>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('dashboard')">📊 概览</div>
+    <div class="tab" onclick="switchTab('users')">👤 用户管理</div>
+    <div class="tab" onclick="switchTab('readings')">📜 占卜记录</div>
+  </div>
+
+  <div class="content">
+    <!-- 概览 -->
+    <div id="dashboard" class="panel active">
+      <div class="stats" id="stats"></div>
+    </div>
+
+    <!-- 用户管理 -->
+    <div id="users" class="panel">
+      <div class="controls">
+        <input type="text" id="user-search" placeholder="搜索用户名..." oninput="renderUsers()">
+      </div>
+      <table>
+        <thead><tr><th>用户名</th><th>性别</th><th>手机号</th><th>出生日期</th><th>占卜次数</th><th>注册时间</th><th>最后登录</th><th>操作</th></tr></thead>
+        <tbody id="user-table"></tbody>
+      </table>
+    </div>
+
+    <!-- 占卜记录 -->
+    <div id="readings" class="panel">
+      <div class="controls">
+        <input type="text" id="reading-search" placeholder="搜索用户名..." oninput="renderReadings()">
+        <select id="spread-filter" onchange="renderReadings()">
+          <option value="">全部牌阵</option>
+          <option value="single">单张</option>
+          <option value="three">三张</option>
+          <option value="celtic">凯尔特十字</option>
+        </select>
+      </div>
+      <table>
+        <thead><tr><th>用户</th><th>牌阵</th><th>卡牌</th><th>时间</th><th>操作</th></tr></thead>
+        <tbody id="reading-table"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="confirm-modal" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+      <p id="confirm-msg"></p>
+      <button class="btn btn-danger" id="confirm-yes">确认删除</button>
+      <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+    </div>
+  </div>
+
+  <script>
+    let allUsers = [], allReadings = [];
+    let confirmCallback = null;
+
+    async function load() {
+      const [uRes, rRes] = await Promise.all([
+        fetch('/api/admin/users'),
+        fetch('/api/admin/readings')
+      ]);
+      allUsers = await uRes.json();
+      allReadings = await rRes.json();
+      renderAll();
+    }
+
+    function renderAll() {
+      renderStats();
+      renderUsers();
+      renderReadings();
+    }
+
+    function renderStats() {
+      const uc = allUsers.length;
+      const rc = allReadings.length;
+      const today = new Date().toISOString().slice(0,10);
+      const todayReadings = allReadings.filter(r => r.created_at.startsWith(today)).length;
+      const spreads = {};
+      allReadings.forEach(r => { spreads[r.spread] = (spreads[r.spread]||0)+1; });
+
+      document.getElementById('stats').innerHTML = `
+        <div class="stat-card"><div class="num">${uc}</div><div class="label">注册用户</div></div>
+        <div class="stat-card"><div class="num">${rc}</div><div class="label">总占卜次数</div></div>
+        <div class="stat-card"><div class="num">${todayReadings}</div><div class="label">今日占卜</div></div>
+        <div class="stat-card"><div class="num">${spreads.single||0}</div><div class="label">单张</div></div>
+        <div class="stat-card"><div class="num">${spreads.three||0}</div><div class="label">三张</div></div>
+        <div class="stat-card"><div class="num">${spreads.celtic||0}</div><div class="label">凯尔特十字</div></div>
+      `;
+    }
+
+    function renderUsers() {
+      const q = (document.getElementById('user-search')?.value||'').toLowerCase();
+      const filtered = q ? allUsers.filter(u => u.username.toLowerCase().includes(q)) : allUsers;
+      const tbody = document.getElementById('user-table');
+      if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">暂无数据</td></tr>'; return; }
+
+      tbody.innerHTML = filtered.map(u => {
+        const genderBadge = u.gender==='男'?'badge-male':u.gender==='女'?'badge-female':'badge-other';
+        const readingCount = allReadings.filter(r => r.username === u.username).length;
+        return `<tr>
+          <td><strong>${esc(u.username)}</strong></td>
+          <td><span class="badge ${genderBadge}">${u.gender}</span></td>
+          <td>${esc(u.phone||'-')}</td>
+          <td>${u.birth_date}</td>
+          <td>${readingCount}</td>
+          <td>${fmt(u.created_at)}</td>
+          <td>${fmt(u.last_login)}</td>
+          <td><button class="btn btn-danger" onclick="confirmDelete('user','${esc(u.username)}')">删除</button></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function renderReadings() {
+      let data = [...allReadings];
+      const q = (document.getElementById('reading-search')?.value||'').toLowerCase();
+      const sf = document.getElementById('spread-filter')?.value||'';
+      if (q) data = data.filter(r => r.username.toLowerCase().includes(q));
+      if (sf) data = data.filter(r => r.spread === sf);
+
+      const tbody = document.getElementById('reading-table');
+      if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">暂无记录</td></tr>'; return; }
+
+      tbody.innerHTML = data.map(r => {
+        const cards = typeof r.cards === 'string' ? JSON.parse(r.cards) : r.cards;
+        const cardsHtml = cards.map(c =>
+          `<span class="badge ${c.isReversed?'badge-down':'badge-up'}">${c.isReversed?'⬇':'⬆'} ${c.name_zh}</span>`
+        ).join(' ');
+        const spreadName = {single:'单张',three:'三张',celtic:'凯尔特十字'}[r.spread]||r.spread;
+        return `<tr>
+          <td>${esc(r.username)}</td>
+          <td>${spreadName}</td>
+          <td style="max-width:400px">${cardsHtml}</td>
+          <td>${fmt(r.created_at)}</td>
+          <td><button class="btn btn-danger" onclick="confirmDelete('reading','${r.id}')">删除</button></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function confirmDelete(type, id) {
+      confirmCallback = () => deleteItem(type, id);
+      document.getElementById('confirm-msg').textContent =
+        type==='user' ? `确定删除用户「${id}」及其所有占卜记录吗？` : `确定删除这条占卜记录吗？`;
+      document.getElementById('confirm-modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('confirm-modal').style.display = 'none';
+      confirmCallback = null;
+    }
+
+    async function deleteItem(type, id) {
+      await fetch(`/api/admin/${type}s/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      closeModal();
+      load();
+    }
+
+    document.getElementById('confirm-yes').onclick = () => { if(confirmCallback) confirmCallback(); };
+
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach((t,i) => {
+        t.classList.toggle('active', ['dashboard','users','readings'][i] === name);
+      });
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById(name).classList.add('active');
+    }
+
+    function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function fmt(s) { return s ? s.replace('T',' ').slice(0,19) : '-'; }
+
+    load();
+  </script>
+</body>
+</html>
