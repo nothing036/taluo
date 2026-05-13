@@ -400,7 +400,7 @@ process.on('SIGINT', () => { db.close(); process.exit(); });
 process.on('SIGTERM', () => { db.close(); process.exit(); });
 
 app.listen(PORT, HOST, () => {
-  console.log(`🔮 塔罗牌占卜系统已启动 → http://${HOST}:${PORT}`);
+  console.log(`🔮 塔罗牌占卜系统 v1.0 → http://${HOST}:${PORT}`);
   console.log(`👤 后台管理 → http://${HOST}:${PORT}/admin`);
   console.log(`🗄️  数据库: ${path.join(__dirname, 'data', 'taluo.db')}`);
 });
