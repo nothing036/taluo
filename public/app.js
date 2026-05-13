@@ -110,15 +110,15 @@ async function handleAuth() {
   const body = { username, password };
   if (authMode === 'register') {
     const gender = document.querySelector('input[name="gender"]:checked')?.value || '男';
-    const birthDate = document.getElementById('auth-birth')?.value;
-    if (!birthDate) {
-      showAuthError('请选择出生日期');
+    const zodiac = document.getElementById('auth-birth')?.value;
+    if (!zodiac) {
+      showAuthError('请选择星座');
       submitBtn.disabled = false;
       submitBtn.textContent = '注册';
       return;
     }
     body.gender = gender;
-    body.birthDate = birthDate;
+    body.birthDate = zodiac;
   }
 
   try {

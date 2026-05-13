@@ -109,7 +109,7 @@ app.post('/api/auth/register', (req, res) => {
   const { username, password, gender, birthDate } = req.body;
 
   if (!username || !password || !gender || !birthDate) {
-    return res.status(400).json({ error: '请填写所有必填字段' });
+    return res.status(400).json({ error: '请填写所有必填字段（用户名、密码、性别、星座）' });
   }
   if (username.length < 2 || username.length > 20) {
     return res.status(400).json({ error: '用户名 2-20 个字符' });
