@@ -12,8 +12,15 @@ const HOST = process.env.HOST || '127.0.0.1';
 // Gzip 压缩
 app.use(compression());
 
-// 静态文件缓存（1 小时）
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
+// 静态文件：HTML 不缓存，其他缓存 10 分钟
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '10m',
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }
+}));
 
 // 信任反向代理
 try { app.set('trust proxy', 1); } catch (e) {}
