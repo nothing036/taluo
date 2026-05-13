@@ -99,11 +99,11 @@ function addReading(username, spread, cards, timestamp) {
 
 // ---- 每日占卜检测 ----
 
-function getTodayReading(username) {
+function getTodayReading(username, spread) {
   const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   return db.prepare(
-    'SELECT * FROM readings WHERE username = ? AND created_at >= ? ORDER BY created_at ASC LIMIT 1'
-  ).get(username, today);
+    'SELECT * FROM readings WHERE username = ? AND spread = ? AND created_at >= ? ORDER BY created_at ASC LIMIT 1'
+  ).get(username, spread, today);
 }
 
 function close() {

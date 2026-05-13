@@ -178,8 +178,10 @@ app.get('/api/shuffle', (_req, res) => {
 app.post('/api/draw', authMiddleware, (req, res) => {
   if (!req.user) return res.status(401).json({ error: '请先登录' });
 
-  // 检查今日是否已占卜
-  const todayReading = db.getTodayReading(req.user.username);
+  const { spread } = req.body;
+
+  // 检查今日该牌阵是否已占卜
+  const todayReading = db.getTodayReading(req.user.username, spread || 'single');
   if (todayReading) {
     const cards = JSON.parse(todayReading.cards);
     return res.json({
@@ -191,7 +193,6 @@ app.post('/api/draw', authMiddleware, (req, res) => {
     });
   }
 
-  const { spread } = req.body;
   let count, positions;
 
   switch (spread) {
