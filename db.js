@@ -1,11 +1,13 @@
 const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
+const fs = require('fs');
 
 const DB_PATH = path.join(__dirname, 'data', 'taluo.db');
 
 let db;
 
 function open() {
+  fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
   db = new DatabaseSync(DB_PATH);
   db.exec('PRAGMA journal_mode=WAL');
   db.exec('PRAGMA foreign_keys=ON');
