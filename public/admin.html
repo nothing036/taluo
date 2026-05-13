@@ -149,13 +149,27 @@
   </div>
 
   <script>
+    const adminToken = localStorage.getItem('admin_token');
+    if (!adminToken) { window.location.href = '/admin-login'; return; }
+
+    async function adminApi(url, opts = {}) {
+      const headers = { ...opts.headers, 'Authorization': 'Bearer ' + adminToken };
+      const res = await fetch(url, { ...opts, headers });
+      if (res.status === 401) {
+        localStorage.removeItem('admin_token');
+        window.location.href = '/admin-login';
+        throw new Error('unauthorized');
+      }
+      return res;
+    }
+
     let allUsers = [], allReadings = [];
     let confirmCallback = null;
 
     async function load() {
       const [uRes, rRes] = await Promise.all([
-        fetch('/api/admin/users'),
-        fetch('/api/admin/readings')
+        adminApi('/api/admin/users'),
+        adminApi('/api/admin/readings')
       ]);
       allUsers = await uRes.json();
       allReadings = await rRes.json();
@@ -247,7 +261,7 @@
     }
 
     async function deleteItem(type, id) {
-      await fetch(`/api/admin/${type}s/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      await adminApi(`/api/admin/${type}s/${encodeURIComponent(id)}`, { method: 'DELETE' });
       closeModal();
       load();
     }

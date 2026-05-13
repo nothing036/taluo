@@ -35,6 +35,39 @@ function verifyPassword(password, salt, hash) {
   return check === hash;
 }
 
+// ---- 管理员认证 ----
+const ADMIN_SALT = crypto.randomBytes(16).toString('hex');
+const ADMIN_HASH = crypto.pbkdf2Sync('xz200366', ADMIN_SALT, 100000, 64, 'sha512').toString('hex');
+const adminSessions = new Map();
+
+function checkAdmin(token) {
+  return adminSessions.get(token) || null;
+}
+
+// 管理员登录
+app.post('/api/admin/login', (req, res) => {
+  const { username, password } = req.body;
+  if (username !== 'nothing') {
+    return res.status(401).json({ error: '管理员账号错误' });
+  }
+  const check = crypto.pbkdf2Sync(password, ADMIN_SALT, 100000, 64, 'sha512').toString('hex');
+  if (check !== ADMIN_HASH) {
+    return res.status(401).json({ error: '密码错误' });
+  }
+  const token = crypto.randomBytes(32).toString('hex');
+  adminSessions.set(token, { username, loginAt: Date.now() });
+  res.json({ ok: true, token });
+});
+
+// 管理员鉴权中间件
+function adminAuth(req, res, next) {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token || !checkAdmin(token)) {
+    return res.status(401).json({ error: '请先登录管理员账号' });
+  }
+  next();
+}
+
 // ---- 会话管理 ----
 const sessions = new Map();
 
@@ -318,29 +351,34 @@ app.post('/api/summary', (req, res) => {
 
 // ---- 后台管理 API ----
 
+// 管理员登录页
+app.get('/admin-login', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin-login.html'));
+});
+
 // 管理员页面
 app.get('/admin', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// 获取所有用户
-app.get('/api/admin/users', (_req, res) => {
+// 获取所有用户（需鉴权）
+app.get('/api/admin/users', adminAuth, (_req, res) => {
   const raw = new (require('node:sqlite').DatabaseSync)(path.join(__dirname, 'data', 'taluo.db'));
   const users = raw.prepare('SELECT username, gender, phone, birth_date, created_at, last_login FROM users ORDER BY created_at DESC').all();
   raw.close();
   res.json(users);
 });
 
-// 获取所有占卜记录
-app.get('/api/admin/readings', (_req, res) => {
+// 获取所有占卜记录（需鉴权）
+app.get('/api/admin/readings', adminAuth, (_req, res) => {
   const raw = new (require('node:sqlite').DatabaseSync)(path.join(__dirname, 'data', 'taluo.db'));
   const readings = raw.prepare('SELECT id, username, spread, cards, created_at FROM readings ORDER BY created_at DESC').all();
   raw.close();
   res.json(readings.map(r => ({ ...r, cards: JSON.parse(r.cards) })));
 });
 
-// 删除用户
-app.delete('/api/admin/users/:username', (req, res) => {
+// 删除用户（需鉴权）
+app.delete('/api/admin/users/:username', adminAuth, (req, res) => {
   const raw = new (require('node:sqlite').DatabaseSync)(path.join(__dirname, 'data', 'taluo.db'));
   raw.prepare('DELETE FROM readings WHERE username = ?').run(req.params.username);
   raw.prepare('DELETE FROM users WHERE username = ?').run(req.params.username);
@@ -348,8 +386,8 @@ app.delete('/api/admin/users/:username', (req, res) => {
   res.json({ ok: true });
 });
 
-// 删除占卜记录
-app.delete('/api/admin/readings/:id', (req, res) => {
+// 删除占卜记录（需鉴权）
+app.delete('/api/admin/readings/:id', adminAuth, (req, res) => {
   const raw = new (require('node:sqlite').DatabaseSync)(path.join(__dirname, 'data', 'taluo.db'));
   raw.prepare('DELETE FROM readings WHERE id = ?').run(req.params.id);
   raw.close();

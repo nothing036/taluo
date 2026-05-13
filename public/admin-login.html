@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔮 管理员登录</title>
+  <style>
+    :root {
+      --bg: #0f0f1e; --card: #1a1a35; --gold: #c9a84c;
+      --text: #e0d8c8; --dim: #8a80a0;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+      display:flex; align-items:center; justify-content:center;
+      min-height:100vh;
+    }
+    .login-box {
+      background: var(--card);
+      border: 1px solid rgba(201,168,76,0.25);
+      border-radius: 20px; padding: 40px 36px;
+      width: 380px; max-width: 90vw;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.4);
+      text-align: center;
+    }
+    .login-box h1 { color: var(--gold); font-size: 1.5em; margin-bottom: 6px; }
+    .login-box p { color: var(--dim); font-size: 0.9em; margin-bottom: 28px; }
+    .input-group {
+      display: flex; align-items: center;
+      margin-bottom: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    .input-group:focus-within { border-color: var(--gold); }
+    .input-icon { padding: 0 12px; font-size: 1.1em; opacity: 0.6; }
+    .input-group input {
+      flex:1; padding:14px 16px 14px 0;
+      background:transparent; border:none; color:var(--text);
+      font-size:0.95em; font-family:inherit; outline:none;
+    }
+    .input-group input::placeholder { color: rgba(255,255,255,0.2); }
+    .btn {
+      width:100%; padding:14px; margin-top:8px;
+      background: linear-gradient(135deg, #7b5ea7, #5a3f8a);
+      border:none; border-radius:12px;
+      color:white; font-size:1em; font-weight:bold;
+      cursor:pointer; font-family:inherit;
+    }
+    .btn:hover { opacity:0.9; }
+    .btn:disabled { opacity:0.5; cursor:not-allowed; }
+    .error {
+      background:rgba(255,100,100,0.1); border:1px solid rgba(255,100,100,0.3);
+      color:#ff8888; padding:10px 14px; border-radius:8px;
+      margin-bottom:12px; font-size:0.85em;
+    }
+    .error.hidden { display:none; }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h1>🔮 管理员登录</h1>
+    <p>请输入管理员凭据</p>
+    <form onsubmit="return false">
+      <div class="input-group">
+        <span class="input-icon">👤</span>
+        <input type="text" id="username" placeholder="管理员账号" autocomplete="username">
+      </div>
+      <div class="input-group">
+        <span class="input-icon">🔒</span>
+        <input type="password" id="password" placeholder="密码" autocomplete="current-password">
+      </div>
+      <div id="error" class="error hidden"></div>
+      <button type="submit" class="btn" onclick="login()">登录</button>
+    </form>
+  </div>
+  <script>
+    // 已登录则直接进后台
+    (async () => {
+      const token = localStorage.getItem('admin_token');
+      if (!token) return;
+      const res = await fetch('/api/admin/users', { headers: { 'Authorization': 'Bearer ' + token } });
+      if (res.ok) window.location.replace('/admin?auth=1');
+      else localStorage.removeItem('admin_token');
+    })();
+
+    async function login() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const btn = document.querySelector('.btn');
+      const errorEl = document.getElementById('error');
+
+      if (!username || !password) {
+        errorEl.textContent = '请输入账号和密码';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      errorEl.classList.add('hidden');
+      btn.disabled = true;
+      btn.textContent = '验证中...';
+
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorEl.textContent = data.error || '登录失败';
+          errorEl.classList.remove('hidden');
+          btn.disabled = false;
+          btn.textContent = '登录';
+          return;
+        }
+
+        localStorage.setItem('admin_token', data.token);
+        window.location.href = '/admin';
+      } catch {
+        errorEl.textContent = '网络错误，请重试';
+        errorEl.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = '登录';
+      }
+    }
+
+    document.getElementById('password').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') login();
+    });
+  </script>
+</body>
+</html>
