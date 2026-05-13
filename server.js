@@ -370,12 +370,37 @@ app.get('/api/admin/users', adminAuth, (_req, res) => {
   res.json(users);
 });
 
-// 获取所有占卜记录（需鉴权）
+// 获取占卜记录列表（需鉴权）
 app.get('/api/admin/readings', adminAuth, (_req, res) => {
   const raw = new (require('node:sqlite').DatabaseSync)(path.join(__dirname, 'data', 'taluo.db'));
   const readings = raw.prepare('SELECT id, username, spread, cards, created_at FROM readings ORDER BY created_at DESC').all();
   raw.close();
   res.json(readings.map(r => ({ ...r, cards: JSON.parse(r.cards) })));
+});
+
+// 获取占卜详情（含完整牌义，需鉴权）
+app.get('/api/admin/readings/:id', adminAuth, (req, res) => {
+  const raw = new (require('node:sqlite').DatabaseSync)(path.join(__dirname, 'data', 'taluo.db'));
+  const reading = raw.prepare('SELECT * FROM readings WHERE id = ?').get(req.params.id);
+  raw.close();
+  if (!reading) return res.status(404).json({ error: '记录不存在' });
+
+  const cards = JSON.parse(reading.cards);
+  // 补充每张牌的完整含义
+  const enriched = cards.map(c => {
+    const full = tarotCards.find(tc => tc.id === c.id);
+    return {
+      ...c,
+      upright: full?.upright || '',
+      reversed: full?.reversed || '',
+      description: full?.description || '',
+      keywords: full?.keywords || [],
+      element: full?.element || '',
+      type: full?.type || '',
+    };
+  });
+
+  res.json({ ...reading, cards: enriched });
 });
 
 // 删除用户（需鉴权）

@@ -127,6 +127,12 @@
     .detail-arrow { font-size: 0.8em; margin-left: auto; }
     .detail-arrow.up { color: var(--gold); }
     .detail-arrow.down { color: #8ab8d8; }
+    .detail-meaning { margin-top: 10px; }
+    .dm-label { color: var(--gold); font-size: 0.8em; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+    .dm-text { color: var(--text); font-size: 0.9em; line-height: 1.7; }
+    .detail-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .dtag { background: rgba(123,94,167,0.15); color: var(--accent-light); padding: 2px 10px; border-radius: 10px; font-size: 0.75em; }
+    .detail-desc { color: var(--text-dim); font-size: 0.8em; line-height: 1.6; margin-top: 10px; font-style: italic; }
     .user-link { color: var(--gold); text-decoration: none; cursor: pointer; }
     .user-link:hover { text-decoration: underline; }
   </style>
@@ -327,23 +333,37 @@
     function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function fmt(s) { return s ? s.replace('T',' ').slice(0,19) : '-'; }
 
-    function showReadingDetail(readingId) {
-      const r = allReadings.find(r => r.id == readingId);
-      if (!r) return;
-      const cards = typeof r.cards === 'string' ? JSON.parse(r.cards) : r.cards;
-      const spreadName = {single:'单张',three:'三张牌阵',celtic:'凯尔特十字'}[r.spread]||r.spread;
-      document.getElementById('detail-title').textContent = `${r.username} - ${spreadName} - ${fmt(r.created_at)}`;
-      document.getElementById('detail-content').innerHTML = cards.map(c => `
-        <div class="detail-card">
-          <div class="detail-card-header">
-            <span class="detail-pos">${c.position}</span>
-            <span class="detail-name">${c.name}</span>
-            <span class="detail-name-zh">${c.name_zh}</span>
-            <span class="detail-arrow ${c.isReversed ? 'down' : 'up'}">${c.isReversed ? '⬇ 逆位' : '⬆ 正位'}</span>
-          </div>
-        </div>
-      `).join('');
+    async function showReadingDetail(readingId) {
+      document.getElementById('detail-content').innerHTML = '<p style="text-align:center;color:var(--dim);padding:20px;">⏳ 加载中...</p>';
       document.getElementById('detail-modal').style.display = 'flex';
+
+      try {
+        const res = await adminApi(`/api/admin/readings/${readingId}`);
+        const r = await res.json();
+        const cards = r.cards;
+        const spreadName = {single:'单张',three:'三张牌阵',celtic:'凯尔特十字'}[r.spread]||r.spread;
+
+        document.getElementById('detail-title').textContent = `${r.username} - ${spreadName} - ${fmt(r.created_at)}`;
+
+        document.getElementById('detail-content').innerHTML = cards.map(c => `
+          <div class="detail-card">
+            <div class="detail-card-header">
+              <span class="detail-pos">${c.position}</span>
+              <span class="detail-name">${c.name}</span>
+              <span class="detail-name-zh">${c.name_zh}</span>
+              <span class="detail-arrow ${c.isReversed ? 'down' : 'up'}">${c.isReversed ? '⬇ 逆位' : '⬆ 正位'}</span>
+            </div>
+            <div class="detail-meaning">
+              <div class="dm-label">🪄 ${c.isReversed ? '逆位含义' : '正位含义'}</div>
+              <div class="dm-text">${c.isReversed ? c.reversed : c.upright}</div>
+            </div>
+            ${c.keywords?.length ? `<div class="detail-tags">${c.keywords.map(k => `<span class="dtag">${k}</span>`).join('')}</div>` : ''}
+            <div class="detail-desc">${c.description || ''}</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        document.getElementById('detail-content').innerHTML = '<p style="text-align:center;color:var(--dim);padding:20px;">⚠️ 加载失败</p>';
+      }
     }
 
     function closeDetail() {
