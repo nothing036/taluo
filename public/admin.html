@@ -91,6 +91,44 @@
     }
     .modal-box p { margin-bottom:20px; }
     .modal-box .btn { margin:0 8px; }
+
+    /* 详情弹窗 */
+    .detail-box {
+      background: var(--card); border: 1px solid rgba(201,168,76,0.25);
+      border-radius: 16px; padding: 28px; width: 600px; max-width: 90vw;
+      max-height: 80vh; overflow-y: auto;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.5);
+    }
+    .detail-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px; padding-bottom: 14px;
+      border-bottom: 1px solid rgba(201,168,76,0.15);
+    }
+    .detail-header span { color: var(--gold); font-size: 1.2em; font-weight: bold; }
+    .detail-close {
+      background: none; border: none; color: var(--dim);
+      font-size: 1.3em; cursor: pointer;
+    }
+    .detail-close:hover { color: var(--text); }
+    .detail-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px; padding: 16px; margin-bottom: 12px;
+    }
+    .detail-card-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+    }
+    .detail-pos {
+      background: rgba(123,94,167,0.2); color: var(--accent-light);
+      padding: 3px 12px; border-radius: 10px; font-size: 0.85em;
+    }
+    .detail-name { color: var(--gold-light); font-weight: bold; }
+    .detail-name-zh { color: var(--text); }
+    .detail-arrow { font-size: 0.8em; margin-left: auto; }
+    .detail-arrow.up { color: var(--gold); }
+    .detail-arrow.down { color: #8ab8d8; }
+    .user-link { color: var(--gold); text-decoration: none; cursor: pointer; }
+    .user-link:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -145,6 +183,16 @@
       <p id="confirm-msg"></p>
       <button class="btn btn-danger" id="confirm-yes">确认删除</button>
       <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+    </div>
+  </div>
+
+  <div id="detail-modal" class="modal-overlay" style="display:none" onclick="closeDetail()">
+    <div class="detail-box" onclick="event.stopPropagation()">
+      <div class="detail-header">
+        <span id="detail-title"></span>
+        <button class="detail-close" onclick="closeDetail()">✕</button>
+      </div>
+      <div id="detail-content"></div>
     </div>
   </div>
 
@@ -239,7 +287,7 @@
         ).join(' ');
         const spreadName = {single:'单张',three:'三张',celtic:'凯尔特十字'}[r.spread]||r.spread;
         return `<tr>
-          <td>${esc(r.username)}</td>
+          <td><a href="#" class="user-link" onclick="showReadingDetail('${r.id}');return false">${esc(r.username)}</a></td>
           <td>${spreadName}</td>
           <td style="max-width:400px">${cardsHtml}</td>
           <td>${fmt(r.created_at)}</td>
@@ -278,6 +326,29 @@
 
     function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function fmt(s) { return s ? s.replace('T',' ').slice(0,19) : '-'; }
+
+    function showReadingDetail(readingId) {
+      const r = allReadings.find(r => r.id == readingId);
+      if (!r) return;
+      const cards = typeof r.cards === 'string' ? JSON.parse(r.cards) : r.cards;
+      const spreadName = {single:'单张',three:'三张牌阵',celtic:'凯尔特十字'}[r.spread]||r.spread;
+      document.getElementById('detail-title').textContent = `${r.username} - ${spreadName} - ${fmt(r.created_at)}`;
+      document.getElementById('detail-content').innerHTML = cards.map(c => `
+        <div class="detail-card">
+          <div class="detail-card-header">
+            <span class="detail-pos">${c.position}</span>
+            <span class="detail-name">${c.name}</span>
+            <span class="detail-name-zh">${c.name_zh}</span>
+            <span class="detail-arrow ${c.isReversed ? 'down' : 'up'}">${c.isReversed ? '⬇ 逆位' : '⬆ 正位'}</span>
+          </div>
+        </div>
+      `).join('');
+      document.getElementById('detail-modal').style.display = 'flex';
+    }
+
+    function closeDetail() {
+      document.getElementById('detail-modal').style.display = 'none';
+    }
 
     load();
   </script>
