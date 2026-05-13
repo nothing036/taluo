@@ -20,6 +20,7 @@ try { app.set('trust proxy', 1); } catch (e) {}
 
 // 初始化数据库
 db.open();
+console.log(`🗄️  数据库路径: ${path.join(__dirname, 'data', 'taluo.db')}`);
 
 app.use(express.json());
 
