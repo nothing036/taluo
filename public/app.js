@@ -352,28 +352,10 @@ function flipAllCards() {
   });
 }
 
-// ====== 进入解读页 ======
-async function showInterpretation(isRepeat = false) {
-  document.getElementById('draw').classList.remove('active');
-  document.getElementById('result').classList.add('active');
+// ====== 渲染解读详情（共享函数） ======
+function renderReadingDetail(container, cards, summary, options = {}) {
+  const { isRepeat = false, isHistory = false } = options;
 
-  const content = document.getElementById('result-content');
-  content.innerHTML = '<div class="loading-summary">🌟 命运正在编织你的解读...</div>';
-
-  // 获取命运总结
-  let summary = null;
-  try {
-    const res = await api('/api/summary', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cards: drawnCards, spread: currentSpread })
-    });
-    if (res.ok) summary = await res.json();
-  } catch (e) { /* 降级 */ }
-
-  content.innerHTML = '';
-
-  // 重复占卜提示
   if (isRepeat) {
     const banner = document.createElement('div');
     banner.className = 'repeat-banner';
@@ -381,7 +363,7 @@ async function showInterpretation(isRepeat = false) {
       <span>🌙</span>
       <span>命运已在今日回应过你的呼唤。以下是今日唯一的启示，请潜心领悟。</span>
     `;
-    content.appendChild(banner);
+    container.appendChild(banner);
   }
 
   // ---- 命运总结卡片 ----
@@ -409,16 +391,16 @@ async function showInterpretation(isRepeat = false) {
         <span>🌟 ${summary.majorCount} 大阿尔克纳</span>
       </div>
     `;
-    content.appendChild(summaryDiv);
+    container.appendChild(summaryDiv);
   }
 
   // ---- 单张牌详析 ----
   const detailTitle = document.createElement('h3');
   detailTitle.className = 'detail-section-title';
   detailTitle.textContent = '📜 各牌详析';
-  content.appendChild(detailTitle);
+  container.appendChild(detailTitle);
 
-  drawnCards.forEach(card => {
+  cards.forEach(card => {
     const meaning = card.isReversed ? card.reversed : card.upright;
     const tagClass = card.isReversed ? 'reversed' : 'upright';
     const tagText = card.isReversed ? '逆位 ⬇' : '正位 ⬆';
@@ -445,8 +427,42 @@ async function showInterpretation(isRepeat = false) {
       </div>
       <div class="result-description">${card.description}</div>
     `;
-    content.appendChild(div);
+    container.appendChild(div);
   });
+
+  // 底部按钮
+  const actions = document.createElement('div');
+  actions.className = 'result-actions';
+  if (isHistory) {
+    actions.innerHTML = '<button onclick="showHistory()">📋 返回记录</button><button onclick="goHome()">🏠 返回首页</button>';
+  } else {
+    actions.innerHTML = '<button onclick="redraw()">🔀 再抽一次</button><button onclick="goHome()">🏠 返回首页</button>';
+  }
+  container.appendChild(actions);
+}
+
+// ====== 进入解读页 ======
+async function showInterpretation(isRepeat = false) {
+  document.getElementById('draw').classList.remove('active');
+  document.getElementById('history').classList.remove('active');
+  document.getElementById('result').classList.add('active');
+
+  const content = document.getElementById('result-content');
+  content.innerHTML = '<div class="loading-summary">🌟 命运正在编织你的解读...</div>';
+
+  // 获取命运总结
+  let summary = null;
+  try {
+    const res = await api('/api/summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cards: drawnCards, spread: currentSpread })
+    });
+    if (res.ok) summary = await res.json();
+  } catch (e) { /* 降级 */ }
+
+  content.innerHTML = '';
+  renderReadingDetail(content, drawnCards, summary, { isRepeat });
 
   // 保存占卜历史
   saveReading(drawnCards, currentSpread);
@@ -514,6 +530,8 @@ async function showHistory() {
 
       const div = document.createElement('div');
       div.className = 'history-card';
+      div.style.cursor = 'pointer';
+      div.onclick = () => viewHistoryDetail(r.id);
       div.innerHTML = `
         <div class="history-card-header">
           <span class="history-idx">#${readings.length - idx}</span>
@@ -534,5 +552,31 @@ async function showHistory() {
     });
   } catch (e) {
     content.innerHTML = '<div class="empty-history">⚠️ 加载失败，请确认服务器已启动</div>';
+  }
+}
+
+// ====== 查看历史占卜详情 ======
+async function viewHistoryDetail(readingId) {
+  document.getElementById('history').classList.remove('active');
+  document.getElementById('result').classList.add('active');
+
+  const content = document.getElementById('result-content');
+  content.innerHTML = '<div class="loading-summary">📜 加载记录详情...</div>';
+
+  try {
+    const res = await api(`/api/auth/history/${readingId}`);
+    if (!res.ok) {
+      const err = await res.json();
+      content.innerHTML = `<div class="empty-history">⚠️ ${err.error || '加载失败'}</div>`;
+      return;
+    }
+    const reading = await res.json();
+    const cards = typeof reading.cards === 'string' ? JSON.parse(reading.cards) : reading.cards;
+
+    content.innerHTML = '';
+    renderReadingDetail(content, cards, reading.summary, { isHistory: true });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) {
+    content.innerHTML = '<div class="empty-history">⚠️ 网络错误，请确认服务器已启动</div>';
   }
 }

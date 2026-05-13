@@ -162,6 +162,33 @@ app.get('/api/auth/history', authMiddleware, (req, res) => {
   res.json(readings.map(r => ({ ...r, cards: JSON.parse(r.cards) })));
 });
 
+// 获取单条占卜详情（含完整牌义和运势总结）
+app.get('/api/auth/history/:id', authMiddleware, (req, res) => {
+  if (!req.user) return res.status(401).json({ error: '未登录' });
+  const reading = db.getReadingById(req.params.id);
+  if (!reading) return res.status(404).json({ error: '记录不存在' });
+  if (reading.username !== req.user.username) return res.status(403).json({ error: '无权访问' });
+
+  const cards = JSON.parse(reading.cards);
+  const summary = generateSummary(cards, reading.spread);
+
+  // 补充每张牌的完整含义
+  const enriched = cards.map(c => {
+    const full = tarotCards.find(tc => tc.id === c.id);
+    return {
+      ...c,
+      upright: full?.upright || '',
+      reversed: full?.reversed || '',
+      description: full?.description || '',
+      keywords: full?.keywords || [],
+      element: full?.element || '',
+      type: full?.type || '',
+    };
+  });
+
+  res.json({ ...reading, cards: enriched, summary });
+});
+
 // 保存占卜历史
 app.post('/api/auth/history', authMiddleware, (req, res) => {
   if (!req.user) return res.status(401).json({ error: '未登录' });

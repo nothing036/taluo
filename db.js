@@ -106,8 +106,12 @@ function getTodayReading(username, spread) {
   ).get(username, spread, today);
 }
 
+function getReadingById(id) {
+  return db.prepare('SELECT * FROM readings WHERE id = ?').get(id);
+}
+
 function close() {
   if (db) db.close();
 }
 
-module.exports = { open, findUser, findUserByPhone, createUser, updateLastLogin, getReadings, addReading, getTodayReading, close };
+module.exports = { open, findUser, findUserByPhone, createUser, updateLastLogin, getReadings, addReading, getTodayReading, getReadingById, close };
