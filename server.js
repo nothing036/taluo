@@ -3,7 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 const compression = require('compression');
 const db = require('./db');
-const tarotCards = require('./data/tarot-cards.json');
+const tarotCards = require('./tarot-cards.json');
 
 const app = express();
 const PORT = process.env.PORT || 3001;

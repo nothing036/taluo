@@ -1,4 +1,4 @@
 node_modules/
-data/taluo.db
+data/
 *.log
 .DS_Store
