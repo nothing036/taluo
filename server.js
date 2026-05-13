@@ -99,9 +99,9 @@ function authMiddleware(req, res, next) {
 
 // 注册
 app.post('/api/auth/register', (req, res) => {
-  const { username, password, gender, birthDate, phone } = req.body;
+  const { username, password, gender, birthDate } = req.body;
 
-  if (!username || !password || !gender || !birthDate || !phone) {
+  if (!username || !password || !gender || !birthDate) {
     return res.status(400).json({ error: '请填写所有必填字段' });
   }
   if (username.length < 2 || username.length > 20) {
@@ -110,22 +110,16 @@ app.post('/api/auth/register', (req, res) => {
   if (password.length < 4) {
     return res.status(400).json({ error: '密码至少 4 位' });
   }
-  if (!/^1[3-9]\d{9}$/.test(phone)) {
-    return res.status(400).json({ error: '请输入有效的手机号' });
-  }
   if (db.findUser(username)) {
     return res.status(409).json({ error: '用户名已被注册' });
-  }
-  if (db.findUserByPhone(phone)) {
-    return res.status(409).json({ error: '该手机号已被注册，请直接登录' });
   }
 
   const { salt, hash } = hashPassword(password);
   const now = new Date().toISOString();
-  const user = { username, salt, hash, gender, birthDate, phone, createdAt: now, lastLogin: now };
+  const user = { username, salt, hash, gender, birthDate, createdAt: now, lastLogin: now };
   db.createUser(user);
 
-  const sessionUser = { username, gender, birthDate, phone };
+  const sessionUser = { username, gender, birthDate };
   const token = createSession(sessionUser);
   res.json({ ok: true, token, user: sessionUser });
 });
@@ -144,7 +138,7 @@ app.post('/api/auth/login', (req, res) => {
 
   db.updateLastLogin(username, new Date().toISOString());
 
-  const sessionUser = { username: user.username, gender: user.gender, birthDate: user.birth_date, phone: user.phone };
+  const sessionUser = { username: user.username, gender: user.gender, birthDate: user.birth_date };
   const token = createSession(sessionUser);
   res.json({ ok: true, token, user: sessionUser });
 });
@@ -365,7 +359,7 @@ app.get('/admin', (_req, res) => {
 // 获取所有用户（需鉴权）
 app.get('/api/admin/users', adminAuth, (_req, res) => {
   const raw = new (require('node:sqlite').DatabaseSync)(path.join(__dirname, 'data', 'taluo.db'));
-  const users = raw.prepare('SELECT username, gender, phone, birth_date, created_at, last_login FROM users ORDER BY created_at DESC').all();
+  const users = raw.prepare('SELECT username, gender, birth_date, created_at, last_login FROM users ORDER BY created_at DESC').all();
   raw.close();
   res.json(users);
 });

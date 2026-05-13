@@ -192,7 +192,7 @@
         <input type="text" id="user-search" placeholder="搜索用户名..." oninput="renderUsers()">
       </div>
       <table>
-        <thead><tr><th>用户名</th><th>性别</th><th>手机号</th><th>出生日期</th><th>占卜次数</th><th>注册时间</th><th>最后登录</th><th>操作</th></tr></thead>
+        <thead><tr><th>用户名</th><th>性别</th><th>出生日期</th><th>占卜次数</th><th>注册时间</th><th>最后登录</th><th>操作</th></tr></thead>
         <tbody id="user-table"></tbody>
       </table>
     </div>
@@ -289,7 +289,7 @@
       const q = (document.getElementById('user-search')?.value||'').toLowerCase();
       const filtered = q ? allUsers.filter(u => u.username.toLowerCase().includes(q)) : allUsers;
       const tbody = document.getElementById('user-table');
-      if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">暂无数据</td></tr>'; return; }
+      if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">暂无数据</td></tr>'; return; }
 
       tbody.innerHTML = filtered.map(u => {
         const genderBadge = u.gender==='男'?'badge-male':u.gender==='女'?'badge-female':'badge-other';
@@ -297,7 +297,6 @@
         return `<tr>
           <td><strong>${esc(u.username)}</strong></td>
           <td><span class="badge ${genderBadge}">${u.gender}</span></td>
-          <td>${esc(u.phone||'-')}</td>
           <td>${u.birth_date}</td>
           <td>${readingCount}</td>
           <td>${fmt(u.created_at)}</td>

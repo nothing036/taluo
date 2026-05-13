@@ -43,8 +43,6 @@ function showAuthModal(mode) {
   // 清空字段
   document.getElementById('auth-username').value = '';
   document.getElementById('auth-password').value = '';
-  const phoneEl = document.getElementById('auth-phone');
-  if (phoneEl) phoneEl.value = '';
   const birthEl = document.getElementById('auth-birth');
   if (birthEl) birthEl.value = '';
   submitBtn.disabled = false;
@@ -61,10 +59,6 @@ function showAuthModal(mode) {
   document.getElementById('auth-password').onkeydown = (e) => {
     if (e.key === 'Enter') handleAuth();
   };
-  const phoneInput = document.getElementById('auth-phone');
-  if (phoneInput) {
-    phoneInput.onkeydown = (e) => { if (e.key === 'Enter') handleAuth(); };
-  }
 }
 
 function closeAuthModal() {
@@ -116,7 +110,6 @@ async function handleAuth() {
   const body = { username, password };
   if (authMode === 'register') {
     const gender = document.querySelector('input[name="gender"]:checked')?.value || '男';
-    const birthDate = document.getElementById('auth-birth').value;
     const phone = document.getElementById('auth-phone').value.trim();
     if (!birthDate) {
       showAuthError('请选择出生日期');
@@ -124,15 +117,8 @@ async function handleAuth() {
       submitBtn.textContent = '注册';
       return;
     }
-    if (!/^1[3-9]\d{9}$/.test(phone)) {
-      showAuthError('请输入有效的手机号');
-      submitBtn.disabled = false;
-      submitBtn.textContent = '注册';
-      return;
-    }
     body.gender = gender;
     body.birthDate = birthDate;
-    body.phone = phone;
   }
 
   try {
