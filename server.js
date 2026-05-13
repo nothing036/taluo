@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
+const compression = require('compression');
 const db = require('./db');
 const tarotCards = require('./data/tarot-cards.json');
 
@@ -8,14 +9,19 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || '127.0.0.1';
 
-// 信任反向代理（Nginx 部署时需要）
-app.set('trust proxy', 1);
+// Gzip 压缩
+app.use(compression());
+
+// 静态文件缓存（1 小时）
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
+
+// 信任反向代理
+try { app.set('trust proxy', 1); } catch (e) {}
 
 // 初始化数据库
 db.open();
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
 // ---- 密码哈希 ----
 function hashPassword(password) {
