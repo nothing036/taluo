@@ -133,6 +133,37 @@
     .detail-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
     .dtag { background: rgba(123,94,167,0.15); color: var(--accent-light); padding: 2px 10px; border-radius: 10px; font-size: 0.75em; }
     .detail-desc { color: var(--text-dim); font-size: 0.8em; line-height: 1.6; margin-top: 10px; font-style: italic; }
+
+    /* 详情总结 */
+    .detail-summary {
+      background: linear-gradient(160deg, rgba(26,16,53,0.6), rgba(21,16,48,0.6));
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 12px; margin-bottom: 20px; overflow: hidden;
+    }
+    .ds-header {
+      background: rgba(201,168,76,0.08);
+      padding: 10px 16px; display: flex; align-items: center;
+      gap: 10px; border-bottom: 1px solid rgba(201,168,76,0.1);
+      color: var(--gold-light); font-weight: bold; font-size: 0.9em;
+    }
+    .ds-tone {
+      padding: 2px 12px; border-radius: 10px;
+      font-size: 0.8em; font-weight: bold; letter-spacing: 1px;
+    }
+    .ds-tone-恩赐 { background: rgba(201,168,76,0.15); color: var(--gold-light); }
+    .ds-tone-试炼 { background: rgba(74,112,144,0.15); color: #8ab8d8; }
+    .ds-tone-平衡 { background: rgba(123,94,167,0.15); color: var(--accent-light); }
+    .ds-body { padding: 14px 16px; }
+    .ds-body p { font-size: 0.85em; line-height: 1.7; margin-bottom: 8px; color: var(--text); }
+    .ds-intro { color: var(--gold-light) !important; font-style: italic; }
+    .ds-closing { color: var(--text-dim) !important; font-style: italic; }
+    .ds-divider { width: 40px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 10px 0; }
+    .ds-stats {
+      display: flex; gap: 16px; justify-content: center;
+      padding: 10px; background: rgba(0,0,0,0.15);
+      border-top: 1px solid rgba(201,168,76,0.08);
+      font-size: 0.78em; color: var(--text-dim);
+    }
     .user-link { color: var(--gold); text-decoration: none; cursor: pointer; }
     .user-link:hover { text-decoration: underline; }
   </style>
@@ -345,7 +376,36 @@
 
         document.getElementById('detail-title').textContent = `${r.username} - ${spreadName} - ${fmt(r.created_at)}`;
 
-        document.getElementById('detail-content').innerHTML = cards.map(c => `
+        let html = '';
+
+        // 总结
+        if (r.summary) {
+          html += `
+            <div class="detail-summary">
+              <div class="ds-header">
+                <span>🔮 命运之眼</span>
+                <span class="ds-tone ds-tone-${r.summary.tone}">${r.summary.tone}</span>
+              </div>
+              <div class="ds-body">
+                <p class="ds-intro">${r.summary.spreadIntro}</p>
+                <p>${r.summary.toneDesc}</p>
+                ${r.summary.arcanaNote ? `<p>${r.summary.arcanaNote}</p>` : ''}
+                ${r.summary.elemNote ? `<p>${r.summary.elemNote}</p>` : ''}
+                ${r.summary.keyNote ? `<p>${r.summary.keyNote}</p>` : ''}
+                <div class="ds-divider"></div>
+                <p class="ds-closing">${r.summary.closing}</p>
+              </div>
+              <div class="ds-stats">
+                <span>🃏 ${r.summary.cardCount} 张</span>
+                <span>⬆ ${r.summary.cardCount - r.summary.reversedCount} 正 · ⬇ ${r.summary.reversedCount} 逆</span>
+                <span>🌟 ${r.summary.majorCount} 大阿尔克纳</span>
+              </div>
+            </div>
+          `;
+        }
+
+        // 各牌详情
+        html += cards.map(c => `
           <div class="detail-card">
             <div class="detail-card-header">
               <span class="detail-pos">${c.position}</span>
@@ -361,6 +421,8 @@
             <div class="detail-desc">${c.description || ''}</div>
           </div>
         `).join('');
+
+        document.getElementById('detail-content').innerHTML = html;
       } catch (e) {
         document.getElementById('detail-content').innerHTML = '<p style="text-align:center;color:var(--dim);padding:20px;">⚠️ 加载失败</p>';
       }

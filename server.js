@@ -386,6 +386,8 @@ app.get('/api/admin/readings/:id', adminAuth, (req, res) => {
   if (!reading) return res.status(404).json({ error: '记录不存在' });
 
   const cards = JSON.parse(reading.cards);
+  // 生成总结
+  const summary = generateSummary(cards, reading.spread);
   // 补充每张牌的完整含义
   const enriched = cards.map(c => {
     const full = tarotCards.find(tc => tc.id === c.id);
@@ -400,7 +402,7 @@ app.get('/api/admin/readings/:id', adminAuth, (req, res) => {
     };
   });
 
-  res.json({ ...reading, cards: enriched });
+  res.json({ ...reading, cards: enriched, summary });
 });
 
 // 删除用户（需鉴权）
